@@ -1,7 +1,4 @@
-use std::{
-    fmt,
-    ops::{BitAnd, BitXor},
-};
+use std::fmt;
 
 fn main()
 {
@@ -216,7 +213,6 @@ impl ChipDisplay
     }
     fn set_pixel(&mut self, x: u8, y: u8, state: bool)
     {
-        let cur_val = self.get_pixel(x, y).unwrap();
         self.buffer[ChipDisplay::get_buffer_position_from_x_and_y(x, y)] =
             if state { 1 } else { 0 };
         self.buffer_tainted = true;
