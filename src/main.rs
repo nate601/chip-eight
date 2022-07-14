@@ -3,6 +3,38 @@ use std::fmt;
 fn main()
 {
     let mut display: ChipDisplay = ChipDisplay::new();
+    let font = get_fonts();
+
+    print!("{}", display);
+    // display.set_pixel(5, 0, true);
+    // display.set_pixel(6, 0, true);
+    // display.set_pixel(7, 0, true);
+    // display.set_pixel(8, 0, true);
+    // display.set_pixel(9, 0, true);
+    let mut font_val = 0usize;
+    for i in 0..64
+    {
+        if i % 5 != 0
+        {
+            continue;
+        }
+        display.draw_sprite(i, 0, font[font_val]);
+        font_val += 1;
+    }
+    loop
+    {
+        if display.buffer_tainted
+        {
+            // print!("{esc}[2J{esc}[1;1H", esc = 27 as char); // Clear screen
+            println!();
+            display.debuff();
+            print!("{}", display);
+            // print!("{:?}", display.data)
+        }
+    }
+}
+
+fn get_fonts() -> [Sprite; 16] {
     let font: [Sprite; 16] = [
         Sprite {
             sprite_data: [
@@ -101,34 +133,7 @@ fn main()
             height: 5,
         },
     ];
-
-    print!("{}", display);
-    // display.set_pixel(5, 0, true);
-    // display.set_pixel(6, 0, true);
-    // display.set_pixel(7, 0, true);
-    // display.set_pixel(8, 0, true);
-    // display.set_pixel(9, 0, true);
-    let mut font_val = 0usize;
-    for i in 0..64
-    {
-        if i % 5 != 0
-        {
-            continue;
-        }
-        display.draw_sprite(i, 0, font[font_val]);
-        font_val += 1;
-    }
-    loop
-    {
-        if display.buffer_tainted
-        {
-            // print!("{esc}[2J{esc}[1;1H", esc = 27 as char); // Clear screen
-            println!();
-            display.debuff();
-            print!("{}", display);
-            // print!("{:?}", display.data)
-        }
-    }
+    font
 }
 
 type ChipRam = [u8; 4096];
