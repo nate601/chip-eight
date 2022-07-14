@@ -223,7 +223,7 @@ impl ChipDisplay
     }
     pub fn draw_sprite(&mut self, x: u8, y: u8, sprite: Sprite) -> bool
     {
-        let mut ret_val = false;
+        let mut xor_cleared_data_marker = false;
         for (sprite_y, sprite_byte) in sprite.sprite_data.iter().enumerate()
         {
             if sprite_y >= sprite.height as usize
@@ -241,7 +241,7 @@ impl ChipDisplay
                         != 0;
                     if sprite_bit == display_bit
                     {
-                        ret_val = true;
+                        xor_cleared_data_marker = true;
                         self.set_pixel(x + sprite_x as u8, y + sprite_y as u8, false);
                     }
                     else
@@ -251,7 +251,7 @@ impl ChipDisplay
                 }
             }
         }
-        ret_val
+        xor_cleared_data_marker
     }
 }
 
