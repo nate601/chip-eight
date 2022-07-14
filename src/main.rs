@@ -156,6 +156,11 @@ struct ChipDisplay
 
 impl ChipDisplay
 {
+    pub fn clear(&mut self)
+    {
+        self.buffer = [0;64*32];
+        self.buffer_tainted = true;
+    }
     pub fn debuff(&mut self)
     {
         self.data = self.buffer;
