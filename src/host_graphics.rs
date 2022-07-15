@@ -1,10 +1,10 @@
-    pub struct Terminal {}
+pub struct Terminal {}
 
-    impl Terminal
+impl Terminal
+{
+    pub fn clear_terminal()
     {
-        pub fn clear_terminal()
-        {
-            // Clear screen
-            print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
-        }
+        // Clear screen
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
     }
+}
