@@ -13,7 +13,7 @@ fn main()
         {
             continue;
         }
-        display.draw_sprite(i, 0, font[font_val]);
+        let _overlap = display.draw_sprite(i, 0, font[font_val]);
         font_val += 1;
     }
     loop
