@@ -6,11 +6,6 @@ fn main()
     let font = get_fonts();
 
     print!("{}", display);
-    // display.set_pixel(5, 0, true);
-    // display.set_pixel(6, 0, true);
-    // display.set_pixel(7, 0, true);
-    // display.set_pixel(8, 0, true);
-    // display.set_pixel(9, 0, true);
     let mut font_val = 0usize;
     for i in 0..64
     {
