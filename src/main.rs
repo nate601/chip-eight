@@ -1,5 +1,6 @@
 use std::fmt;
 
+mod host_graphics;
 fn main()
 {
     let mut display: ChipDisplay = ChipDisplay::new();
@@ -20,7 +21,7 @@ fn main()
     {
         if display.buffer_tainted
         {
-            Terminal::clear_terminal();
+            host_graphics::Terminal::clear_terminal();
             println!();
             display.debuff();
             print!("{}", display);
@@ -28,15 +29,6 @@ fn main()
     }
 }
 
-struct Terminal {}
-impl Terminal
-{
-    fn clear_terminal()
-    {
-        // Clear screen
-        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
-    }
-}
 
 fn get_fonts() -> [Sprite; 16]
 {
