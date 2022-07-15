@@ -25,16 +25,16 @@ fn main()
     {
         if display.buffer_tainted
         {
-            // print!("{esc}[2J{esc}[1;1H", esc = 27 as char); // Clear screen
+            print!("{esc}[2J{esc}[1;1H", esc = 27 as char); // Clear screen
             println!();
             display.debuff();
             print!("{}", display);
-            // print!("{:?}", display.data)
         }
     }
 }
 
-fn get_fonts() -> [Sprite; 16] {
+fn get_fonts() -> [Sprite; 16]
+{
     let font: [Sprite; 16] = [
         Sprite {
             sprite_data: [
@@ -160,7 +160,7 @@ impl ChipDisplay
 {
     pub fn clear(&mut self)
     {
-        self.buffer = [0;64*32];
+        self.buffer = [0; 64 * 32];
         self.buffer_tainted = true;
     }
     pub fn debuff(&mut self)
@@ -320,9 +320,9 @@ impl fmt::Display for Sprite
 #[cfg(test)]
 mod tests
 {
-    use std::collections::{HashMap};
+    use std::collections::HashMap;
 
-    use crate::{ChipDisplay, get_fonts};
+    use crate::{get_fonts, ChipDisplay};
 
     #[test]
     fn check_if_collision_in_buffer_and_x_y_test()
