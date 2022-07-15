@@ -296,6 +296,10 @@ struct Sprite
     sprite_data: [u8; 15],
     height: u8,
 }
+
+impl Sprite {
+    fn new(sprite_data: [u8; 15], height: u8) -> Self { Self { sprite_data, height } }
+}
 impl fmt::Display for Sprite
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
