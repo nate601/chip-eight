@@ -20,11 +20,21 @@ fn main()
     {
         if display.buffer_tainted
         {
-            print!("{esc}[2J{esc}[1;1H", esc = 27 as char); // Clear screen
+            Terminal::clear_terminal();
             println!();
             display.debuff();
             print!("{}", display);
         }
+    }
+}
+
+struct Terminal {}
+impl Terminal
+{
+    fn clear_terminal()
+    {
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+        // Clear screen
     }
 }
 
@@ -292,8 +302,15 @@ struct Sprite
     height: u8,
 }
 
-impl Sprite {
-    fn new(sprite_data: [u8; 15], height: u8) -> Self { Self { sprite_data, height } }
+impl Sprite
+{
+    fn new(sprite_data: [u8; 15], height: u8) -> Self
+    {
+        Self {
+            sprite_data,
+            height,
+        }
+    }
 }
 impl fmt::Display for Sprite
 {
