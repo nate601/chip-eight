@@ -1,13 +1,24 @@
-use std::fmt;
+use std::{fmt, thread, sync::mpsc};
+
+use crate::host_graphics::Terminal;
 
 mod host_graphics;
+pub mod tests;
+
 fn main()
 {
     let mut display: ChipDisplay = ChipDisplay::new();
     let font = get_fonts();
+    let mut terminal = Terminal::new();
 
     print!("{}", display);
     let mut font_val = 0usize;
+    let (tx, rx) = mpsc::channel();
+
+    let _key_read_handle = thread::spawn(move || {
+        terminal.key_update_loop(tx);
+    });
+
     for i in 0..64
     {
         if i % 5 != 0
@@ -22,9 +33,8 @@ fn main()
         if display.buffer_tainted
         {
             host_graphics::Terminal::clear_terminal();
-            println!();
             display.debuff();
-            print!("{}", display);
+            print!("{}\r\n", display);
         }
     }
 }
@@ -281,7 +291,7 @@ impl fmt::Display for ChipDisplay
                 )
                 .unwrap();
             }
-            f.write_str("\n").unwrap();
+            f.write_str("\n\r").unwrap();
         }
         Ok(())
     }
