@@ -1,4 +1,9 @@
-use std::{fmt, thread, sync::mpsc};
+use std::{
+    fmt,
+    sync::{mpsc, Arc, Mutex},
+    thread,
+    time::Duration,
+};
 
 use crate::host_graphics::Terminal;
 
@@ -8,15 +13,19 @@ pub mod tests;
 fn main()
 {
     let mut display: ChipDisplay = ChipDisplay::new();
+    let display_threaded: ThreadedDisplay = Arc::new(Mutex::new(display));
+    let display_threaded_loop_clone: ThreadedDisplay = display_threaded.clone();
     let font = get_fonts();
     let mut terminal = Terminal::new();
 
-    print!("{}", display);
     let mut font_val = 0usize;
     let (tx, rx) = mpsc::channel();
 
     let _key_read_handle = thread::spawn(move || {
         terminal.key_update_loop(tx);
+    });
+    let _rendering_handle = thread::spawn(|| {
+        display_loop(display_threaded_loop_clone);
     });
 
     for i in 0..64
@@ -25,11 +34,25 @@ fn main()
         {
             continue;
         }
+        let mut display = display_threaded.lock().unwrap();
         let _overlap = display.draw_sprite(i, 0, font[font_val]);
         font_val += 1;
     }
     loop
     {
+        let rec = rx.recv().unwrap();
+        if rec == '1'
+        {
+            let mut display = display_threaded.lock().unwrap();
+            display.draw_sprite(0, 0, font[0]);
+        }
+    }
+}
+fn display_loop(display_threaded: ThreadedDisplay)
+{
+    loop
+    {
+        let mut display = display_threaded.lock().unwrap();
         if display.buffer_tainted
         {
             host_graphics::Terminal::clear_terminal();
@@ -38,7 +61,6 @@ fn main()
         }
     }
 }
-
 
 fn get_fonts() -> [Sprite; 16]
 {
@@ -155,6 +177,8 @@ struct ChipRegisters
     sp: u8,
     stack: [u16; 16],
 }
+
+type ThreadedDisplay = Arc<Mutex<ChipDisplay>>;
 
 struct ChipDisplay
 {
