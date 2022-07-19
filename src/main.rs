@@ -14,10 +14,10 @@ pub mod tests;
 
 fn main()
 {
-    let mut display: ChipDisplay = ChipDisplay::new();
+    let display: ChipDisplay = ChipDisplay::new();
     let display_threaded: ThreadedDisplay = Arc::new(Mutex::new(display));
-    let display_threaded_loop_clone: ThreadedDisplay = display_threaded.clone();
-    let font = guest_graphics::get_fonts();
+    let display_threaded_loop_clone: ThreadedDisplay = display_threaded;
+    let _font = guest_graphics::get_fonts();
     let mut terminal = Terminal::new();
 
     let (tx, rx) = mpsc::channel();
@@ -28,6 +28,12 @@ fn main()
     let _rendering_handle = thread::spawn(move || {
         guest_graphics::display_loop(display_threaded_loop_clone);
     });
+
+    let mut ram: ChipRam = [0; 4096];
+    let mut registers: ChipRegisters = ChipRegisters::new();
+
+
+    
 
     loop
     {
@@ -46,4 +52,25 @@ struct ChipRegisters
     pc: u16,
     sp: u8,
     stack: [u16; 16],
+}
+impl ChipRegisters
+{
+    fn new() -> ChipRegisters 
+    {
+        Self{
+            v: [0u8;16],
+            i:0u16,
+            delay:0u8,
+            sound:0u8,
+            pc:0u16,
+            sp:0u8,
+            stack:[0u16;16]
+        }
+    }
+}
+
+impl Default for ChipRegisters {
+    fn default() -> Self {
+        Self::new()
+    }
 }
