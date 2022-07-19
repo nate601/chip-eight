@@ -1,5 +1,7 @@
 use std::{
     fmt,
+    fs::File,
+    io::Read,
     sync::{mpsc, Arc, Mutex},
     thread,
     time::Duration,
@@ -32,12 +34,73 @@ fn main()
     let mut ram: ChipRam = [0; 4096];
     let mut registers: ChipRegisters = ChipRegisters::new();
 
-
-    
+    let rom_name = "a.rom";
+    load_rom_into_ram(rom_name, &mut ram);
+    registers.pc = 200;
 
     loop
     {
-        let rec = rx.recv().unwrap();
+        let next_instruction = Instruction::get_next_instruction(ram, &mut registers);
+    }
+}
+
+struct Instruction
+{
+    pub data: [u8; 2],
+}
+
+impl Instruction
+{
+    pub fn get_next_instruction(ram: [u8; 4096], registers: &mut ChipRegisters) -> Instruction
+    {
+        let next_instruction = [ram[registers.pc as usize], ram[registers.pc as usize + 1]];
+        registers.pc += 2;
+        Instruction::new(next_instruction)
+    }
+
+    pub fn get_nnn(&self) -> u16
+    {
+        let mut k = 0u16;
+        k |= self.data[1] as u16;
+        let mut j = (self.data[0] & 0b1111) as u16;
+        j <<= 8;
+        k |= j;
+        k
+    }
+    pub fn get_n(&self) -> u8
+    {
+        self.data[1] & 0b1111
+    }
+    pub fn get_x(&self) -> u8
+    {
+        self.data[0] & 0b1111
+    }
+    pub fn get_y(&self) -> u8
+    {
+        self.data[1] >> 4
+    }
+    pub fn get_kk(&self) -> u8
+    {
+        self.data[1]
+    }
+
+    fn new(next_instruction: [u8; 2]) -> Instruction
+    {
+        Self {
+            data: next_instruction,
+        }
+    }
+}
+
+fn load_rom_into_ram(rom_name: &str, ram: &mut [u8; 4096])
+{
+    let mut file_handle = File::open(rom_name).unwrap();
+    let mut buf: Vec<u8> = Vec::new();
+    file_handle.read_to_end(&mut buf).unwrap();
+    let base_ram_position = 0x200usize;
+    for (i, val) in buf.iter().enumerate()
+    {
+        ram[i + base_ram_position] = *val;
     }
 }
 
@@ -55,22 +118,24 @@ struct ChipRegisters
 }
 impl ChipRegisters
 {
-    fn new() -> ChipRegisters 
+    fn new() -> ChipRegisters
     {
-        Self{
-            v: [0u8;16],
-            i:0u16,
-            delay:0u8,
-            sound:0u8,
-            pc:0u16,
-            sp:0u8,
-            stack:[0u16;16]
+        Self {
+            v: [0u8; 16],
+            i: 0u16,
+            delay: 0u8,
+            sound: 0u8,
+            pc: 0u16,
+            sp: 0u8,
+            stack: [0u16; 16],
         }
     }
 }
 
-impl Default for ChipRegisters {
-    fn default() -> Self {
+impl Default for ChipRegisters
+{
+    fn default() -> Self
+    {
         Self::new()
     }
 }

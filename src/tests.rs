@@ -1,7 +1,7 @@
 #[cfg(test)]
 use std::collections::HashMap;
 
-use crate::{get_fonts, host_graphics::Terminal, ChipDisplay};
+use crate::{get_fonts, host_graphics::Terminal, ChipDisplay, Instruction};
 
 #[test]
 fn check_if_collision_in_buffer_and_x_y_test()
@@ -36,11 +36,12 @@ fn sprite_print_test()
     println!("{}", font[0]);
 }
 #[test]
-fn key_update_single_test()
+fn instruction_reading_test()
 {
-    let mut term = Terminal {
-        key_pressed: [false; 16],
-    };
-    term.key_update_loop();
-    Terminal::clear_terminal();
+    let ins = Instruction::new([0xF1, 0x2B]);
+    assert_eq!(ins.get_nnn(), 0x12B);
+    assert_eq!(ins.get_n(), 0xB);
+    assert_eq!(ins.get_x(), 0x1);
+    assert_eq!(ins.get_y(), 0x2);
+    assert_eq!(ins.get_kk(), 0x2B);
 }
