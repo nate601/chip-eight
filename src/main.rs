@@ -28,24 +28,9 @@ fn main()
         display_loop(display_threaded_loop_clone);
     });
 
-    for i in 0..64
-    {
-        if i % 5 != 0
-        {
-            continue;
-        }
-        let mut display = display_threaded.lock().unwrap();
-        let _overlap = display.draw_sprite(i, 0, font[font_val]);
-        font_val += 1;
-    }
     loop
     {
         let rec = rx.recv().unwrap();
-        if rec == '1'
-        {
-            let mut display = display_threaded.lock().unwrap();
-            display.draw_sprite(0, 0, font[0]);
-        }
     }
 }
 fn display_loop(display_threaded: ThreadedDisplay)
