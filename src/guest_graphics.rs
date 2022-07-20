@@ -287,6 +287,18 @@ impl Sprite
             height,
         }
     }
+    pub fn new_from_bytes(bytes: &[u8]) -> Sprite
+    {
+        let height = bytes.len();
+        let mut bytes = bytes.to_vec();
+        bytes.resize(15, 0x0);
+
+        let sprite_data: [u8; 15] = bytes.try_into().unwrap();
+        Self {
+            sprite_data,
+            height: height.try_into().unwrap(),
+        }
+    }
 }
 impl fmt::Display for Sprite
 {

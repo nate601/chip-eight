@@ -1,7 +1,7 @@
 #[cfg(test)]
 use std::collections::HashMap;
 
-use crate::{get_fonts, host_graphics::Terminal, ChipDisplay, Instruction};
+use crate::{get_fonts, host_graphics::Terminal, ChipDisplay, Instruction, Operation, OpCode};
 
 #[test]
 fn check_if_collision_in_buffer_and_x_y_test()
