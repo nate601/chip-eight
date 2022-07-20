@@ -70,35 +70,192 @@ fn main()
                     let xor = dis.draw_sprite(xpos, ypos, sprite);
                     registers.v[0xFusize] = if xor { 1 } else { 0 };
                 }
-                OpCode::Ret => todo!(),
-                OpCode::Call => todo!(),
-                OpCode::SeVxBy => todo!(),
-                OpCode::SneVxBy => todo!(),
-                OpCode::SeVxVy => todo!(),
-                OpCode::AddVxBy => todo!(),
-                OpCode::LdVxVy => todo!(),
-                OpCode::OrVxVy => todo!(),
-                OpCode::AndVxVy => todo!(),
-                OpCode::XorVxVy => todo!(),
-                OpCode::AddVxVy => todo!(),
-                OpCode::SubVxVy => todo!(),
-                OpCode::ShrVxVy => todo!(),
-                OpCode::SubnVxVy => todo!(),
-                OpCode::ShlVxVy => todo!(),
-                OpCode::SneVxVy => todo!(),
-                OpCode::JpV0Addr => todo!(),
-                OpCode::RndVxBy => todo!(),
+                OpCode::Ret =>
+                {
+                    registers.pc = registers.stack[registers.sp as usize];
+                    registers.sp -= 1;
+                }
+                OpCode::Call =>
+                {
+                    registers.sp += 1;
+                    registers.stack[registers.sp as usize] = registers.pc;
+                    registers.pc = next_instruction.get_nnn();
+                }
+                OpCode::SeVxBy =>
+                {
+                    if registers.v[next_instruction.get_x() as usize] == next_instruction.get_kk()
+                    {
+                        registers.pc += 2;
+                    }
+                }
+                OpCode::SneVxBy =>
+                {
+                    if registers.v[next_instruction.get_x() as usize] != next_instruction.get_kk()
+                    {
+                        registers.pc += 2;
+                    }
+                }
+                OpCode::SeVxVy =>
+                {
+                    if registers.v[next_instruction.get_x() as usize]
+                        == registers.v[next_instruction.get_y() as usize]
+                    {
+                        registers.pc += 2;
+                    }
+                }
+                OpCode::AddVxBy =>
+                {
+                    let k = registers.v[next_instruction.get_x() as usize];
+                    registers.v[next_instruction.get_x() as usize] = next_instruction.get_kk() + k;
+                }
+                OpCode::LdVxVy =>
+                {
+                    registers.v[next_instruction.get_x() as usize] =
+                        registers.v[next_instruction.get_y() as usize];
+                }
+                OpCode::OrVxVy =>
+                {
+                    registers.v[next_instruction.get_x() as usize] |=
+                        registers.v[next_instruction.get_y() as usize];
+                }
+                OpCode::AndVxVy =>
+                {
+                    registers.v[next_instruction.get_x() as usize] &=
+                        registers.v[next_instruction.get_y() as usize];
+                }
+                OpCode::XorVxVy =>
+                {
+                    registers.v[next_instruction.get_x() as usize] ^=
+                        registers.v[next_instruction.get_y() as usize];
+                }
+                OpCode::AddVxVy =>
+                {
+                    let x = registers.v[next_instruction.get_x() as usize] as u16;
+                    let y = registers.v[next_instruction.get_y() as usize] as u16;
+                    let mut val = x + y;
+                    let mut flag = false;
+                    if val > 255
+                    {
+                        flag = true;
+                        val &= 0b1111_1111;
+                    }
+                    registers.v[next_instruction.get_x() as usize] = val as u8;
+                    registers.v[0xF] = if flag { 1 } else { 0 };
+                }
+                OpCode::SubVxVy =>
+                {
+                    let x = registers.v[next_instruction.get_x() as usize];
+                    let y = registers.v[next_instruction.get_y() as usize];
+                    let mut flag = false;
+                    if x > y
+                    {
+                        flag = true;
+                    }
+                    let val = x - y;
+                    registers.v[next_instruction.get_x() as usize] = val;
+                    registers.v[0xF] = if flag { 1 } else { 0 };
+                }
+                OpCode::ShrVxVy =>
+                {
+                    let x = registers.v[next_instruction.get_x() as usize];
+                    let mut flag = false;
+                    let mut val = x;
+                    if x & 0b1 == 1
+                    {
+                        flag = true;
+                    }
+                    val /= 2;
+                    registers.v[next_instruction.get_x() as usize] = val;
+                    registers.v[0xF] = if flag { 1 } else { 0 };
+                }
+                OpCode::SubnVxVy =>
+                {
+                    let x = registers.v[next_instruction.get_x() as usize];
+                    let y = registers.v[next_instruction.get_y() as usize];
+                    let mut flag = false;
+                    let mut val = y;
+                    if y > x
+                    {
+                        flag = true;
+                    }
+                    val -= x;
+                    registers.v[next_instruction.get_x() as usize] = val;
+                    registers.v[0xF] = if flag { 1 } else { 0 };
+                }
+                OpCode::ShlVxVy =>
+                {
+                    let x = registers.v[next_instruction.get_x() as usize];
+                    let mut flag = false;
+                    let mut val = x;
+                    if x & 0b1000_0000 == 0b1000_0000
+                    {
+                        flag = true;
+                    }
+                    val *= 2;
+                    registers.v[next_instruction.get_x() as usize] = val;
+                    registers.v[0xF] = if flag { 1 } else { 0 };
+                }
+                OpCode::SneVxVy =>
+                {
+                    if registers.v[next_instruction.get_x() as usize]
+                        != registers.v[next_instruction.get_y() as usize]
+                    {
+                        registers.pc += 2;
+                    }
+                }
+                OpCode::JpV0Addr =>
+                {
+                    let addt = registers.v[0x0];
+                    registers.pc = next_instruction.get_nnn() + addt as u16;
+                }
+                OpCode::RndVxBy =>
+                {
+                    //TODO: Implement real random number generator!
+                    let random_number = 4;
+                    registers.v[next_instruction.get_x() as usize] =
+                        random_number & next_instruction.get_kk();
+                }
                 OpCode::SkpVx => todo!(),
                 OpCode::SknpVx => todo!(),
-                OpCode::LdVxDt => todo!(),
+                OpCode::LdVxDt =>
+                {
+                    registers.v[next_instruction.get_x() as usize] = registers.delay;
+                }
                 OpCode::LdVxK => todo!(),
-                OpCode::LdDtVx => todo!(),
-                OpCode::LdStVx => todo!(),
-                OpCode::AddIVx => todo!(),
+                OpCode::LdDtVx => registers.delay = registers.v[next_instruction.get_x() as usize],
+                OpCode::LdStVx =>
+                {
+                    registers.sound = registers.v[next_instruction.get_x() as usize];
+                }
+                OpCode::AddIVx =>
+                {
+                    registers.i += registers.v[next_instruction.get_x() as usize] as u16;
+                }
                 OpCode::LdFVx => todo!(),
-                OpCode::LdBVx => todo!(),
-                OpCode::LdIVx => todo!(),
-                OpCode::LdVxI => todo!(),
+                OpCode::LdBVx =>
+                {
+                    let x = registers.v[next_instruction.get_x() as usize];
+                    let location = registers.i;
+                    let hundreds = x / 100;
+                    let tens = (x - (hundreds * 100)) / 10;
+                    let ones = x - (hundreds * 100) - (tens * 10);
+
+                    ram[location as usize] = hundreds;
+                    ram[location as usize + 1] = tens;
+                    ram[location as usize + 2] = ones;
+                }
+                OpCode::LdIVx =>
+                {
+                    let i = registers.i as usize;
+                    let maxx = registers.v[next_instruction.get_x() as usize] as usize;
+                    ram[i..i + maxx].copy_from_slice(&registers.v[..maxx]);
+                }
+                OpCode::LdVxI =>
+                {
+                    let i = registers.i as usize;
+                    let maxx = registers.v[next_instruction.get_x() as usize] as usize;
+                    registers.v[..maxx].copy_from_slice(&ram[i..i + maxx]);
+                }
             }
         }
         else
@@ -594,7 +751,7 @@ struct ChipRegisters
     delay: u8,
     sound: u8,
     pc: u16,
-    sp: u8,
+    sp: i8,
     stack: [u16; 16],
 }
 impl ChipRegisters
@@ -607,7 +764,7 @@ impl ChipRegisters
             delay: 0u8,
             sound: 0u8,
             pc: 0u16,
-            sp: 0u8,
+            sp: -1i8,
             stack: [0u16; 16],
         }
     }
