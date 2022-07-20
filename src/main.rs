@@ -50,7 +50,7 @@ fn main()
             {
                 OpCode::Cls => display_threaded.lock().unwrap().clear(),
                 OpCode::Jmp => registers.pc = next_instruction.get_nnn(),
-                OpCode::Ld =>
+                OpCode::LdVxBy =>
                 {
                     registers.v[next_instruction.get_x() as usize] = next_instruction.get_kk()
                 }
@@ -62,13 +62,43 @@ fn main()
                 OpCode::Display =>
                 {
                     let mut dis = display_threaded.lock().unwrap();
-                    let sprite_data = &ram[registers.i as usize..next_instruction.get_n() as usize + registers.i as usize];
+                    let sprite_data = &ram[registers.i as usize
+                        ..next_instruction.get_n() as usize + registers.i as usize];
                     let xpos = registers.v[next_instruction.get_x() as usize];
                     let ypos = registers.v[next_instruction.get_y() as usize];
                     let sprite = Sprite::new_from_bytes(sprite_data);
                     let xor = dis.draw_sprite(xpos, ypos, sprite);
                     registers.v[0xFusize] = if xor { 1 } else { 0 };
                 }
+                OpCode::Ret => todo!(),
+                OpCode::Call => todo!(),
+                OpCode::SeVxBy => todo!(),
+                OpCode::SneVxBy => todo!(),
+                OpCode::SeVxVy => todo!(),
+                OpCode::AddVxBy => todo!(),
+                OpCode::LdVxVy => todo!(),
+                OpCode::OrVxVy => todo!(),
+                OpCode::AndVxVy => todo!(),
+                OpCode::XorVxVy => todo!(),
+                OpCode::AddVxVy => todo!(),
+                OpCode::SubVxVy => todo!(),
+                OpCode::ShrVxVy => todo!(),
+                OpCode::SubnVxVy => todo!(),
+                OpCode::ShlVxVy => todo!(),
+                OpCode::SneVxVy => todo!(),
+                OpCode::JpV0Addr => todo!(),
+                OpCode::RndVxBy => todo!(),
+                OpCode::SkpVx => todo!(),
+                OpCode::SknpVx => todo!(),
+                OpCode::LdVxDt => todo!(),
+                OpCode::LdVxK => todo!(),
+                OpCode::LdDtVx => todo!(),
+                OpCode::LdStVx => todo!(),
+                OpCode::AddIVx => todo!(),
+                OpCode::LdFVx => todo!(),
+                OpCode::LdBVx => todo!(),
+                OpCode::LdIVx => todo!(),
+                OpCode::LdVxI => todo!(),
             }
         }
         else
@@ -80,13 +110,20 @@ fn main()
 
 struct Operation
 {
-    name: String,
     definition: Vec<OperationComponent>,
     op_code: OpCode,
 }
 
 impl Operation
 {
+    fn new(op_code: OpCode, definition: Vec<OperationComponent>) -> Self
+    {
+        Self {
+            definition,
+            op_code,
+        }
+    }
+
     pub fn get_op_code(instruction: &Instruction) -> Option<OpCode>
     {
         let operations = Operation::get_operations();
@@ -125,7 +162,6 @@ impl Operation
     {
         vec![
             Self {
-                name: "CLS".to_string(),
                 definition: vec![
                     OperationComponent::Literal(0x0),
                     OperationComponent::Literal(0x0),
@@ -135,21 +171,18 @@ impl Operation
                 op_code: OpCode::Cls,
             },
             Self {
-                name: "JMP".to_string(),
                 definition: vec![OperationComponent::Literal(0x1), OperationComponent::Nnn],
                 op_code: OpCode::Jmp,
             },
             Self {
-                name: "LD Vx, byte".to_string(),
                 definition: vec![
                     OperationComponent::Literal(0x6),
                     OperationComponent::X,
                     OperationComponent::Kk,
                 ],
-                op_code: OpCode::Ld,
+                op_code: OpCode::LdVxBy,
             },
             Self {
-                name: "ADD Vx, byte".to_string(),
                 definition: vec![
                     OperationComponent::Literal(0x7),
                     OperationComponent::X,
@@ -158,12 +191,10 @@ impl Operation
                 op_code: OpCode::Add,
             },
             Self {
-                name: "LD I, addr".to_string(),
                 definition: vec![OperationComponent::Literal(0xA), OperationComponent::Nnn],
                 op_code: OpCode::LdI,
             },
             Self {
-                name: "Display Sprite".to_string(),
                 definition: vec![
                     OperationComponent::Literal(0xD),
                     OperationComponent::X,
@@ -172,6 +203,253 @@ impl Operation
                 ],
                 op_code: OpCode::Display,
             },
+            Self::new(
+                OpCode::Ret,
+                vec![
+                    OperationComponent::Literal(0x0),
+                    OperationComponent::Literal(0x0),
+                    OperationComponent::Literal(0xE),
+                    OperationComponent::Literal(0xE),
+                ],
+            ),
+            Self::new(
+                OpCode::Call,
+                vec![OperationComponent::Literal(0x2), OperationComponent::Nnn],
+            ),
+            Self::new(
+                OpCode::SeVxBy,
+                vec![
+                    OperationComponent::Literal(0x3),
+                    OperationComponent::X,
+                    OperationComponent::Kk,
+                ],
+            ),
+            Self::new(
+                OpCode::SneVxBy,
+                vec![
+                    OperationComponent::Literal(0x4),
+                    OperationComponent::X,
+                    OperationComponent::Kk,
+                ],
+            ),
+            Self::new(
+                OpCode::SeVxVy,
+                vec![
+                    OperationComponent::Literal(0x5),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0x0),
+                ],
+            ),
+            Self::new(
+                OpCode::AddVxBy,
+                vec![
+                    OperationComponent::Literal(0x7),
+                    OperationComponent::X,
+                    OperationComponent::Kk,
+                ],
+            ),
+            Self::new(
+                OpCode::LdVxVy,
+                vec![
+                    OperationComponent::Literal(0x8),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0x0),
+                ],
+            ),
+            Self::new(
+                OpCode::OrVxVy,
+                vec![
+                    OperationComponent::Literal(0x8),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0x1),
+                ],
+            ),
+            Self::new(
+                OpCode::AddVxVy,
+                vec![
+                    OperationComponent::Literal(0x8),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0x2),
+                ],
+            ),
+            Self::new(
+                OpCode::XorVxVy,
+                vec![
+                    OperationComponent::Literal(0x8),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0x3),
+                ],
+            ),
+            Self::new(
+                OpCode::AndVxVy,
+                vec![
+                    OperationComponent::Literal(0x8),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0x4),
+                ],
+            ),
+            Self::new(
+                OpCode::SubVxVy,
+                vec![
+                    OperationComponent::Literal(0x8),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0x5),
+                ],
+            ),
+            Self::new(
+                OpCode::ShrVxVy,
+                vec![
+                    OperationComponent::Literal(0x8),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0x6),
+                ],
+            ),
+            Self::new(
+                OpCode::SubnVxVy,
+                vec![
+                    OperationComponent::Literal(0x8),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0x7),
+                ],
+            ),
+            Self::new(
+                OpCode::ShlVxVy,
+                vec![
+                    OperationComponent::Literal(0x8),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0xE),
+                ],
+            ),
+            Self::new(
+                OpCode::SneVxVy,
+                vec![
+                    OperationComponent::Literal(0x9),
+                    OperationComponent::X,
+                    OperationComponent::Y,
+                    OperationComponent::Literal(0x0),
+                ],
+            ),
+            Self::new(
+                OpCode::JpV0Addr,
+                vec![OperationComponent::Literal(0xB), OperationComponent::Nnn],
+            ),
+            Self::new(
+                OpCode::RndVxBy,
+                vec![
+                    OperationComponent::Literal(0xC),
+                    OperationComponent::X,
+                    OperationComponent::Kk,
+                ],
+            ),
+            Self::new(
+                OpCode::SkpVx,
+                vec![
+                    OperationComponent::Literal(0xE),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0x9),
+                    OperationComponent::Literal(0xE),
+                ],
+            ),
+            Self::new(
+                OpCode::SknpVx,
+                vec![
+                    OperationComponent::Literal(0xE),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0xA),
+                    OperationComponent::Literal(0x1),
+                ],
+            ),
+            Self::new(
+                OpCode::LdVxDt,
+                vec![
+                    OperationComponent::Literal(0xF),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0x0),
+                    OperationComponent::Literal(0x7),
+                ],
+            ),
+            Self::new(
+                OpCode::LdVxK,
+                vec![
+                    OperationComponent::Literal(0xF),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0x0),
+                    OperationComponent::Literal(0xA),
+                ],
+            ),
+            Self::new(
+                OpCode::LdDtVx,
+                vec![
+                    OperationComponent::Literal(0xF),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0x1),
+                    OperationComponent::Literal(0x5),
+                ],
+            ),
+            Self::new(
+                OpCode::LdStVx,
+                vec![
+                    OperationComponent::Literal(0xF),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0x1),
+                    OperationComponent::Literal(0x8),
+                ],
+            ),
+            Self::new(
+                OpCode::AddIVx,
+                vec![
+                    OperationComponent::Literal(0xF),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0x1),
+                    OperationComponent::Literal(0xE),
+                ],
+            ),
+            Self::new(
+                OpCode::LdFVx,
+                vec![
+                    OperationComponent::Literal(0xF),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0x2),
+                    OperationComponent::Literal(0x9),
+                ],
+            ),
+            Self::new(
+                OpCode::LdBVx,
+                vec![
+                    OperationComponent::Literal(0xF),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0x3),
+                    OperationComponent::Literal(0x3),
+                ],
+            ),
+            Self::new(
+                OpCode::LdIVx,
+                vec![
+                    OperationComponent::Literal(0xF),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0x5),
+                    OperationComponent::Literal(0x5),
+                ],
+            ),
+            Self::new(
+                OpCode::LdVxI,
+                vec![
+                    OperationComponent::Literal(0xF),
+                    OperationComponent::X,
+                    OperationComponent::Literal(0x6),
+                    OperationComponent::Literal(0x5),
+                ],
+            ),
         ]
     }
 }
@@ -180,10 +458,39 @@ enum OpCode
 {
     Cls,
     Jmp,
-    Ld,
+    LdVxBy,
     Add,
     LdI,
     Display,
+    Ret,
+    Call,
+    SeVxBy,
+    SneVxBy,
+    SeVxVy,
+    AddVxBy,
+    LdVxVy,
+    OrVxVy,
+    AndVxVy,
+    XorVxVy,
+    AddVxVy,
+    SubVxVy,
+    ShrVxVy,
+    SubnVxVy,
+    ShlVxVy,
+    SneVxVy,
+    JpV0Addr,
+    RndVxBy,
+    SkpVx,
+    SknpVx,
+    LdVxDt,
+    LdVxK,
+    LdDtVx,
+    LdStVx,
+    AddIVx,
+    LdFVx,
+    LdBVx,
+    LdIVx,
+    LdVxI,
 }
 #[derive(Copy, Clone)]
 enum OperationComponent
