@@ -8,12 +8,16 @@ use std::{
     time::Duration,
 };
 
+use host_graphics::Input;
+
 use crate::guest_graphics::*;
 use crate::host_graphics::Terminal;
 
 pub mod guest_graphics;
 mod host_graphics;
 pub mod tests;
+
+const OPS_PER_SECOND: u64 = 1000;
 
 fn main()
 {
@@ -41,7 +45,7 @@ fn main()
 
     loop
     {
-        thread::sleep(Duration::from_millis(1000));
+        thread::sleep(Duration::from_millis(1 / OPS_PER_SECOND));
         let next_instruction = Instruction::get_next_instruction(ram, &mut registers);
         let next_op = Operation::get_op_code(&next_instruction);
         if let Some(x) = next_op
