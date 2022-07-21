@@ -26,11 +26,13 @@ fn main()
     let display_threaded_loop_clone: ThreadedDisplay = display_threaded.clone();
     let _font = guest_graphics::get_fonts();
     let mut terminal = Terminal::new();
+    let input_threaded = Input::get_threaded_input();
+    let input_threaded_clone = input_threaded.clone();
 
     let (tx, rx) = mpsc::channel();
 
     let _key_read_handle = thread::spawn(move || {
-        terminal.key_update_loop(tx);
+        terminal.key_update_loop(tx, input_threaded_clone);
     });
     let _rendering_handle = thread::spawn(move || {
         guest_graphics::display_loop(display_threaded_loop_clone);
@@ -219,13 +221,35 @@ fn main()
                     registers.v[next_instruction.get_x() as usize] =
                         random_number & next_instruction.get_kk();
                 }
-                OpCode::SkpVx => todo!(),
-                OpCode::SknpVx => todo!(),
+                OpCode::SkpVx => {
+                    let inp = input_threaded.lock().unwrap();
+                    let key_index = registers.v[next_instruction.get_x() as usize] as usize;
+                    if inp.key_is_down(key_index)
+                    {
+                        registers.pc += 2;
+                    }
+                },
+                OpCode::SknpVx =>{
+                    let inp = input_threaded.lock().unwrap();
+                    let key_index = registers.v[next_instruction.get_x() as usize] as usize;
+                    if !inp.key_is_down(key_index)
+                    {
+                        registers.pc += 2;
+                    }
+                },
                 OpCode::LdVxDt =>
                 {
                     registers.v[next_instruction.get_x() as usize] = registers.delay;
                 }
-                OpCode::LdVxK => todo!(),
+                OpCode::LdVxK =>{
+                    
+                    let inp = input_threaded.lock().unwrap();
+                    let key_index = registers.v[next_instruction.get_x() as usize] as usize;
+                    if !inp.key_is_down(key_index)
+                    {
+                        registers.pc -= 2;
+                    }
+                },
                 OpCode::LdDtVx => registers.delay = registers.v[next_instruction.get_x() as usize],
                 OpCode::LdStVx =>
                 {
