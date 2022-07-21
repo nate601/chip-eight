@@ -275,13 +275,13 @@ fn main()
                 OpCode::LdIVx =>
                 {
                     let i = registers.i as usize;
-                    let maxx = registers.v[next_instruction.get_x() as usize] as usize;
+                    let maxx = next_instruction.get_x()as usize;
                     ram[i..i + maxx].copy_from_slice(&registers.v[..maxx]);
                 }
                 OpCode::LdVxI =>
                 {
                     let i = registers.i as usize;
-                    let maxx = registers.v[next_instruction.get_x() as usize] as usize;
+                    let maxx = next_instruction.get_x() as usize;
                     registers.v[..maxx].copy_from_slice(&ram[i..i + maxx]);
                 }
             }
