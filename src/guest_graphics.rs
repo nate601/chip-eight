@@ -255,12 +255,12 @@ impl fmt::Display for ChipDisplay
                         == 1
                     {
                         // 1
-                        "▓"
+                        "⬛"
                     }
                     else
                     {
                         // 0
-                        "▁"
+                        "⬜"
                     }
                 )
                 .unwrap();
