@@ -29,6 +29,7 @@ fn main()
     let input_threaded = Input::get_threaded_input();
     let input_threaded_clone = input_threaded.clone();
 
+
     let (tx, rx) = mpsc::channel();
 
     let _key_read_handle = thread::spawn(move || {
@@ -37,6 +38,7 @@ fn main()
     let _rendering_handle = thread::spawn(move || {
         guest_graphics::display_loop(display_threaded_loop_clone);
     });
+    
 
     let mut ram: ChipRam = [0; 4096];
     let mut registers: ChipRegisters = ChipRegisters::new();
@@ -62,7 +64,7 @@ fn main()
                 }
                 OpCode::Add =>
                 {
-                    registers.v[next_instruction.get_x() as usize] += next_instruction.get_kk()
+                    registers.v[next_instruction.get_x() as usize] = registers.v[next_instruction.get_x() as usize].wrapping_add(next_instruction.get_kk()) 
                 }
                 OpCode::LdI => registers.i = next_instruction.get_nnn(),
                 OpCode::Display =>
@@ -157,7 +159,7 @@ fn main()
                     {
                         flag = true;
                     }
-                    let val = x - y;
+                    let val = x.saturating_sub(y) ;
                     registers.v[next_instruction.get_x() as usize] = val;
                     registers.v[0xF] = if flag { 1 } else { 0 };
                 }
@@ -197,7 +199,7 @@ fn main()
                     {
                         flag = true;
                     }
-                    val *= 2;
+                    val = val.wrapping_mul(2);
                     registers.v[next_instruction.get_x() as usize] = val;
                     registers.v[0xF] = if flag { 1 } else { 0 };
                 }
