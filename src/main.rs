@@ -3,7 +3,7 @@ use std::{
     fs::File,
     io::Read,
     ops::{BitAnd, Deref},
-    sync::{mpsc, Arc, Mutex},
+    sync::{mpsc, Arc, Mutex, MutexGuard},
     thread,
     time::Duration,
 };
@@ -18,6 +18,7 @@ mod host_graphics;
 pub mod tests;
 
 const OPS_PER_SECOND: u64 = 1000;
+const FONT_RAM_OFFSET: usize = 0x0;
 
 fn main()
 {
@@ -27,27 +28,50 @@ fn main()
     let _font = guest_graphics::get_fonts();
     let mut terminal = Terminal::new();
     let input_threaded = Input::get_threaded_input();
-    let input_threaded_clone = input_threaded.clone();
+    let mut input_threaded_clone = input_threaded.clone();
 
     let (tx, rx) = mpsc::channel();
 
     let _key_read_handle = thread::spawn(move || {
-        terminal.key_update_loop(tx, input_threaded_clone);
+        terminal.key_update_loop(tx, &mut input_threaded_clone);
     });
     let _rendering_handle = thread::spawn(move || {
         guest_graphics::display_loop(display_threaded_loop_clone);
     });
 
     let mut ram: ChipRam = [0; 4096];
-    let mut registers: ChipRegisters = ChipRegisters::new();
+
+    let registers = ChipRegisters::get_new_threaded();
+    let registers_threaded_clone = registers.clone();
+
+    let _timer_handler = thread::spawn(move || {
+        loop
+        {
+            thread::sleep(Duration::from_millis(1000 / 60));
+            let mut regs = registers_threaded_clone.lock().unwrap();
+            if regs.delay > 0
+            {
+                regs.delay -= 1;
+            }
+            if regs.sound > 0
+            {
+                regs.sound -= 1;
+            }
+        }
+    });
 
     let rom_name = "a.rom";
     load_rom_into_ram(rom_name, &mut ram);
-    registers.pc = 0x200;
+    for (i, val) in _font.iter().enumerate()
+    {
+        load_into_ram(&val.sprite_data, &mut ram, FONT_RAM_OFFSET + i as usize * 5)
+    }
+    registers.lock().unwrap().pc = 0x200;
 
     loop
     {
-        thread::sleep(Duration::from_millis(1 / OPS_PER_SECOND));
+        thread::sleep(Duration::from_millis(1));
+        let mut registers = registers.lock().unwrap();
         let next_instruction = Instruction::get_next_instruction(ram, &mut registers);
         let next_op = Operation::get_op_code(&next_instruction);
         if let Some(x) = next_op
@@ -86,7 +110,8 @@ fn main()
                 OpCode::Call =>
                 {
                     registers.sp += 1;
-                    registers.stack[registers.sp as usize] = registers.pc;
+                    let sp = registers.sp as usize;
+                    registers.stack[sp] = registers.pc;
                     registers.pc = next_instruction.get_nnn();
                 }
                 OpCode::SeVxBy =>
@@ -259,7 +284,11 @@ fn main()
                 {
                     registers.i += registers.v[next_instruction.get_x() as usize] as u16;
                 }
-                OpCode::LdFVx => todo!(),
+                OpCode::LdFVx =>
+                {
+                    registers.i = registers.v[next_instruction.get_x() as usize] as u16 * 5
+                        + FONT_RAM_OFFSET as u16
+                }
                 OpCode::LdBVx =>
                 {
                     let x = registers.v[next_instruction.get_x() as usize];
@@ -277,14 +306,14 @@ fn main()
                     let i = registers.i as usize;
                     let maxx = next_instruction.get_x() as usize;
                     ram[i..=i + maxx].copy_from_slice(&registers.v[..=maxx]);
-                    registers.i +=2;
+                    registers.i += 2;
                 }
                 OpCode::LdVxI =>
                 {
                     let i = registers.i as usize;
                     let maxx = next_instruction.get_x() as usize;
                     registers.v[..=maxx].copy_from_slice(&ram[i..=i + maxx]);
-                    registers.i +=2;
+                    registers.i += 2;
                 }
             }
         }
@@ -711,7 +740,10 @@ impl fmt::Display for Instruction
 
 impl Instruction
 {
-    pub fn get_next_instruction(ram: [u8; 4096], registers: &mut ChipRegisters) -> Instruction
+    pub fn get_next_instruction(
+        ram: [u8; 4096],
+        registers: &mut MutexGuard<ChipRegisters>,
+    ) -> Instruction
     {
         let next_instruction = [ram[registers.pc as usize], ram[registers.pc as usize + 1]];
         registers.pc += 2;
@@ -766,6 +798,11 @@ fn load_rom_into_ram(rom_name: &str, ram: &mut [u8; 4096])
     let mut buf: Vec<u8> = Vec::new();
     file_handle.read_to_end(&mut buf).unwrap();
     let base_ram_position = 0x200usize;
+    load_into_ram(&buf, ram, base_ram_position);
+}
+
+fn load_into_ram(buf: &[u8], ram: &mut [u8; 4096], base_ram_position: usize)
+{
     for (i, val) in buf.iter().enumerate()
     {
         ram[i + base_ram_position] = *val;
@@ -798,7 +835,13 @@ impl ChipRegisters
             stack: [0u16; 16],
         }
     }
+    pub fn get_new_threaded() -> ThreadedChipRegisters
+    {
+        Arc::new(Mutex::new(ChipRegisters::new()))
+    }
 }
+
+type ThreadedChipRegisters = Arc<Mutex<ChipRegisters>>;
 
 impl Default for ChipRegisters
 {

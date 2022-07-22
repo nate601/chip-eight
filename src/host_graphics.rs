@@ -56,11 +56,11 @@ impl Terminal
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
     }
     fn get_output_into_raw() {}
-    pub fn key_update_loop(&mut self, tx: mpsc::Sender<usize>, input: ThreadedInput)
+    pub fn key_update_loop(&mut self, tx: mpsc::Sender<usize>, input: &mut ThreadedInput)
     {
         //TODO: Change these to more... ergonomic bindings
         let key_bindings: [char; 16] = [
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+            'x', '1', '2', '3', 'q', 'w', 'e', 'a', 's', 'd', 'z', 'c', '4', 'r', 'f', 'v',
         ];
         let mut _stdout = stdout().into_raw_mode().unwrap();
         let stdin = stdin();
@@ -68,8 +68,9 @@ impl Terminal
         {
             if let termion::event::Key::Char(c) = c.unwrap()
             {
-                if c == 'q'
+                if c == 'm'
                 {
+                    panic!("Quitting!");
                     return;
                 }
                 let pos = key_bindings.iter().position(|x| c == *x);
@@ -77,6 +78,9 @@ impl Terminal
                 {
                     let pos = pos.unwrap();
                     self.key_pressed[pos] = true;
+                    let mut inp = input.lock().unwrap();
+                    inp.time_last_pressed[pos] = Some(Instant::now());
+
                     tx.send(pos).unwrap();
                 }
             }

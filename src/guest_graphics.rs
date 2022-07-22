@@ -144,38 +144,7 @@ impl ChipDisplay
 
     pub fn get_pixel(&self, x: u8, y: u8) -> Option<u8>
     {
-        // println!("{}, {}", x, y);
-        Some(
-            ({
-                let this = self
-                    .data
-                    .get(ChipDisplay::get_buffer_position_from_x_and_y(x, y));
-                match this
-                {
-                    Some(val) => val,
-                    None => panic!(
-                        "called `Option::unwrap()` on a `None` value {}, {} = {}",
-                        x,
-                        y,
-                        (32 * y as i32) + x as i32
-                    ),
-                }
-            }) | {
-                let this = self
-                    .buffer
-                    .get(ChipDisplay::get_buffer_position_from_x_and_y(x, y));
-                match this
-                {
-                    Some(val) => val,
-                    None => panic!(
-                        "called `Option::unwrap()` on a `None` value {}, {} = {} ",
-                        x,
-                        y,
-                        (32 * y as i32) + x as i32
-                    ),
-                }
-            },
-        )
+        self.data.get(ChipDisplay::get_buffer_position_from_x_and_y(x, y)).copied()
     }
     pub fn new() -> Self
     {
@@ -213,7 +182,7 @@ impl ChipDisplay
                         .get_pixel(x + sprite_x as u8, y + sprite_y as u8)
                         .unwrap()
                         != 0;
-                    if sprite_bit == display_bit
+                    if display_bit
                     {
                         xor_cleared_data_marker = true;
                         self.set_pixel(x + sprite_x as u8, y + sprite_y as u8, false);
