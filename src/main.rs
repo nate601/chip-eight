@@ -2,7 +2,7 @@ use std::{
     fmt,
     fs::File,
     io::Read,
-    ops::Deref,
+    ops::{BitAnd, Deref},
     sync::{mpsc, Arc, Mutex},
     thread,
     time::Duration,
@@ -29,7 +29,6 @@ fn main()
     let input_threaded = Input::get_threaded_input();
     let input_threaded_clone = input_threaded.clone();
 
-
     let (tx, rx) = mpsc::channel();
 
     let _key_read_handle = thread::spawn(move || {
@@ -38,7 +37,6 @@ fn main()
     let _rendering_handle = thread::spawn(move || {
         guest_graphics::display_loop(display_threaded_loop_clone);
     });
-    
 
     let mut ram: ChipRam = [0; 4096];
     let mut registers: ChipRegisters = ChipRegisters::new();
@@ -64,7 +62,9 @@ fn main()
                 }
                 OpCode::Add =>
                 {
-                    registers.v[next_instruction.get_x() as usize] = registers.v[next_instruction.get_x() as usize].wrapping_add(next_instruction.get_kk()) 
+                    registers.v[next_instruction.get_x() as usize] = registers.v
+                        [next_instruction.get_x() as usize]
+                        .wrapping_add(next_instruction.get_kk())
                 }
                 OpCode::LdI => registers.i = next_instruction.get_nnn(),
                 OpCode::Display =>
@@ -128,8 +128,9 @@ fn main()
                 }
                 OpCode::AndVxVy =>
                 {
-                    registers.v[next_instruction.get_x() as usize] &=
-                        registers.v[next_instruction.get_y() as usize];
+                    registers.v[next_instruction.get_x() as usize] = registers.v
+                        [next_instruction.get_x() as usize]
+                        .bitand(registers.v[next_instruction.get_y() as usize]);
                 }
                 OpCode::XorVxVy =>
                 {
@@ -154,12 +155,7 @@ fn main()
                 {
                     let x = registers.v[next_instruction.get_x() as usize];
                     let y = registers.v[next_instruction.get_y() as usize];
-                    let mut flag = false;
-                    if x > y
-                    {
-                        flag = true;
-                    }
-                    let val = x.saturating_sub(y) ;
+                    let (val, flag) = x.overflowing_sub(y);
                     registers.v[next_instruction.get_x() as usize] = val;
                     registers.v[0xF] = if flag { 1 } else { 0 };
                 }
@@ -223,35 +219,37 @@ fn main()
                     registers.v[next_instruction.get_x() as usize] =
                         random_number & next_instruction.get_kk();
                 }
-                OpCode::SkpVx => {
+                OpCode::SkpVx =>
+                {
                     let inp = input_threaded.lock().unwrap();
                     let key_index = registers.v[next_instruction.get_x() as usize] as usize;
                     if inp.key_is_down(key_index)
                     {
                         registers.pc += 2;
                     }
-                },
-                OpCode::SknpVx =>{
+                }
+                OpCode::SknpVx =>
+                {
                     let inp = input_threaded.lock().unwrap();
                     let key_index = registers.v[next_instruction.get_x() as usize] as usize;
                     if !inp.key_is_down(key_index)
                     {
                         registers.pc += 2;
                     }
-                },
+                }
                 OpCode::LdVxDt =>
                 {
                     registers.v[next_instruction.get_x() as usize] = registers.delay;
                 }
-                OpCode::LdVxK =>{
-                    
+                OpCode::LdVxK =>
+                {
                     let inp = input_threaded.lock().unwrap();
                     let key_index = registers.v[next_instruction.get_x() as usize] as usize;
                     if !inp.key_is_down(key_index)
                     {
                         registers.pc -= 2;
                     }
-                },
+                }
                 OpCode::LdDtVx => registers.delay = registers.v[next_instruction.get_x() as usize],
                 OpCode::LdStVx =>
                 {
@@ -277,14 +275,16 @@ fn main()
                 OpCode::LdIVx =>
                 {
                     let i = registers.i as usize;
-                    let maxx = next_instruction.get_x()as usize;
-                    ram[i..i + maxx].copy_from_slice(&registers.v[..maxx]);
+                    let maxx = next_instruction.get_x() as usize;
+                    ram[i..=i + maxx].copy_from_slice(&registers.v[..=maxx]);
+                    registers.i +=2;
                 }
                 OpCode::LdVxI =>
                 {
                     let i = registers.i as usize;
                     let maxx = next_instruction.get_x() as usize;
-                    registers.v[..maxx].copy_from_slice(&ram[i..i + maxx]);
+                    registers.v[..=maxx].copy_from_slice(&ram[i..=i + maxx]);
+                    registers.i +=2;
                 }
             }
         }
@@ -460,7 +460,7 @@ impl Operation
                     OperationComponent::Literal(0x8),
                     OperationComponent::X,
                     OperationComponent::Y,
-                    OperationComponent::Literal(0x2),
+                    OperationComponent::Literal(0x4),
                 ],
             ),
             Self::new(
@@ -478,7 +478,7 @@ impl Operation
                     OperationComponent::Literal(0x8),
                     OperationComponent::X,
                     OperationComponent::Y,
-                    OperationComponent::Literal(0x4),
+                    OperationComponent::Literal(0x2),
                 ],
             ),
             Self::new(
