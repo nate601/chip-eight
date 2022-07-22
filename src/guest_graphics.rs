@@ -167,6 +167,8 @@ impl ChipDisplay
     pub fn draw_sprite(&mut self, x: u8, y: u8, sprite: Sprite) -> bool
     {
         let mut xor_cleared_data_marker = false;
+        let x = x % 64;
+        let y = y % 32;
         for (sprite_y, sprite_byte) in sprite.sprite_data.iter().enumerate()
         {
             if sprite_y >= sprite.height as usize
