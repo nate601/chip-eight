@@ -219,7 +219,7 @@ impl fmt::Display for ChipDisplay
                 // f.write_str(self.data.get(x * y));
                 write!(
                     f,
-                    "{} ",
+                    "{}",
                     if self
                         .get_pixel(x, y)
                         .expect("Tried to display value outside of bounds of graphics data")
