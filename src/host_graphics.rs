@@ -6,7 +6,7 @@ use std::{
 
 use termion::{input::TermRead, raw::IntoRawMode};
 
-const MIN_MILLISEC_KEY_CONSIDERED_PRESSED: u128 = 100;
+const MIN_MILLISEC_KEY_CONSIDERED_PRESSED: u128 = 10;
 
 pub struct Terminal
 {
